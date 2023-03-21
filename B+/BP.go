@@ -27,7 +27,7 @@ func (b *BPTree) Get(key int64) any {
 	node := b.root
 	for i := 0; i < len(node.Nodes); i++ {
 		//找到小于maxKey的key
-		if node.Nodes[i].MaxKey >= key {
+		if node.Nodes[i].MaxKey >= key { //这个找到一个就替换了
 			node = node.Nodes[i]
 			i = 0
 		}

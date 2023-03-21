@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>video</title>
+    <link href="https://unpkg.com/video.js/dist/video-js.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/video.js/dist/video.min.js"></script>
+</head>
+<body>
+<div id="box">
+    <video id="my-player" controls preload="auto">
+        <source src="http://127.0.0.1:8091/oceans.mp4" type="video/mp4">
+    </video>
+</div>
+
+    
+<!--<script>-->
+<!--    let  options = {};-->
+<!--    let vide=document.querySelector("#my-player")-->
+<!--    let  player = videojs(vide, options, ()=>{});-->
+<!--    player.src({src:'//vjs.zencdn.net/v/oceans.mp4', type: 'video/mp4'})-->
+
+<!--</script>-->
+
+<style>
+    #box{
+        border: 1px solid transparent;
+        width: 50%;
+        margin: 0 auto;
+    }
+</style>
+</body>
+</html>

@@ -19,3 +19,11 @@ func NewLeafNode(width int) *BPNode {
 		Items: items,
 	}
 }
+
+func NewIndexNode(width int) *BPNode {
+	nodes := make([]*BPNode, 0, width+1)
+	return &BPNode{
+		Nodes: nodes,
+		Items: nil,
+	}
+}

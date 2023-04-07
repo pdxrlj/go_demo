@@ -31,7 +31,7 @@ func main() {
 		panic(err)
 	}
 	imageBound := geo.NewBound(lonMax, lonMin, latMax, latMin)
-
+	fmt.Printf("imageBound: %v\n", imageBound)
 	//4.2 获取原始影像的像素分辨率
 	srcWEPixelResolution := (lonMax - lonMin) / float64(XCount)
 	srcNSPixelResolution := (latMax - latMin) / float64(YCount)

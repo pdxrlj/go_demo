@@ -18,30 +18,34 @@ package main
 import (
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 
 	"github.com/airbusgeo/godal"
 	"github.com/lukeroth/gdal"
+
+	"tile_grid/utils"
 )
 
 func main() {
 	dataset := NewDataset("/Users/ruanlianjun/Desktop/demo.tif")
+
 	epsg, err := godal.NewSpatialRefFromEPSG(3857)
 	if err != nil {
 		panic(err)
 	}
 
 	bounds := dataset.TransformBounds(epsg)
-	tileRange := NewTileRange().TileRange(10, bounds)
-
 	vrt := dataset.mercatorVrt()
-	// vrt_width:11314, vrt_height:11365
-	fmt.Printf("width:%d height:%d\n", vrt.dataset.Structure().SizeX, vrt.dataset.Structure().SizeY)
-	tileRange.iter(func(tileId *TileId) {
-		//tmp := make([]byte, 256*256*3)
-		//vrt.ReadTile(tileId, 256, tmp)
-		return
-	})
+	for i := 8; i < 11; i++ {
+		tileRange := NewTileRange().TileRange(i, bounds)
 
+		tileRange.iter(func(tileId *TileId) {
+			vrt.ReadTile(tileId, 256)
+			return
+		})
+	}
+	vrt.vrtDataset.Close()
 }
 
 type TileRange struct {
@@ -132,31 +136,45 @@ func (a *Affine) fromGdal(transform [6]float64) *Affine {
 }
 
 func (a *Affine) invert() *Affine {
-	inv_determinant := 1.0 / (a.a*a.e - a.b*a.d)
+	invDeterminant := 1.0 / (a.a*a.e - a.b*a.d)
 
 	ac := &Affine{}
-	ac.a = a.e * inv_determinant
-	ac.b = -a.b * inv_determinant
-	ac.d = -a.d * inv_determinant
-	ac.e = a.a * inv_determinant
-	ac.c = -a.c*a.a - a.f*a.b
-	ac.f = -a.c*a.d - a.f*a.e
+	ac.a = a.e * invDeterminant
+	ac.b = -a.b * invDeterminant
+	ac.d = -a.d * invDeterminant
+	ac.e = a.a * invDeterminant
+
+	ac.c = -a.c*ac.a - a.f*ac.b
+	ac.f = -a.c*ac.d - a.f*ac.e
 	return ac
 }
 
 func (a *Affine) multiply(x, y float64) (float64, float64) {
-	// x * self.a + y * self.b + self.c,
-	// x * self.d + y * self.e + self.f,
 	xc := x*a.a + y*a.b + a.c
 	yc := x*a.d + y*a.e + a.f
 	return xc, yc
 }
 
+func (a *Affine) scale(x, y float64) *Affine {
+	return &Affine{
+		a: a.a * x,
+		b: a.b,
+		c: a.c,
+		d: a.d,
+		e: a.e * y,
+		f: a.f,
+	}
+}
+
+func (a *Affine) resolution() (float64, float64) {
+	return math.Abs(a.a), math.Abs(a.e)
+}
+
 type Windows struct {
-	x_offset float64
-	y_offset float64
-	width    float64
-	height   float64
+	xOffset float64
+	yOffset float64
+	width   float64
+	height  float64
 }
 
 func NewWindows() *Windows {
@@ -165,12 +183,14 @@ func NewWindows() *Windows {
 
 func (w *Windows) fromBounds(transform *Affine, bounds *Bounds) *Windows {
 	transformInvert := transform.invert()
-	xs := [4]float64{0, 0, 0, 0}
-	ys := [4]float64{0, 0, 0, 0}
+
+	xs := [4]float64{0.0, 0.0, 0.0, 0.0}
+	ys := [4]float64{0.0, 0.0, 0.0, 0.0}
 	xs[0], ys[0] = transformInvert.multiply(bounds.xmin, bounds.ymin)
 	xs[1], ys[1] = transformInvert.multiply(bounds.xmin, bounds.ymax)
 	xs[2], ys[2] = transformInvert.multiply(bounds.xmax, bounds.ymin)
 	xs[3], ys[3] = transformInvert.multiply(bounds.xmax, bounds.ymax)
+
 	xmin := xs[0]
 	xmax := xs[0]
 	ymin := ys[0]
@@ -190,13 +210,31 @@ func (w *Windows) fromBounds(transform *Affine, bounds *Bounds) *Windows {
 		}
 	}
 
-	return w
+	return &Windows{
+		xOffset: xmin,
+		yOffset: ymin,
+		width:   xmax - xmin,
+		height:  ymax - ymin,
+	}
+}
+
+func (w *Windows) transform(transform *Affine) *Affine {
+	x, y := transform.multiply(w.xOffset, w.yOffset)
+	return &Affine{
+		a: transform.a,
+		b: transform.b,
+		c: x,
+		d: transform.d,
+		e: transform.e,
+		f: y,
+	}
 }
 
 // -----
 
 type Dataset struct {
 	dataset       *godal.Dataset
+	vrtDataset    gdal.Dataset
 	originDataSet string
 }
 
@@ -216,41 +254,81 @@ func NewDataset(path string) *Dataset {
 
 }
 
-func (d *Dataset) ReadTile(tileId *TileId, tileSize int, buffer []byte) {
-	//tileSizeF := float64(tileSize)
+func (d *Dataset) ReadTile(tileId *TileId, tileSize int) {
 
-	// tile_id:TileID { zoom: 10, x: 833, y: 405 } vrt_width:11314, vrt_height:11365
-	// windows:Window { x_offset: -2936.607967421529, y_offset: 554.7919124158216, width: 3231.292925737798, height: 3231.292925737798 }
+	vrtWidthF := float64(d.vrtDataset.RasterXSize())
+	vrtHeightF := float64(d.vrtDataset.RasterYSize())
 
-	vrtWidthF := d.dataset.Structure().SizeX
-	vrtHeightF := d.dataset.Structure().SizeY
-	fmt.Printf("tileId:%+v vrt_width_f:%+v vrt_width_f:%+v\n", tileId, vrtWidthF, vrtHeightF)
-	return
-	geoTransform, err := d.dataset.GeoTransform()
-	if err != nil {
-		panic(err)
-	}
+	geoTransform := d.vrtDataset.GeoTransform()
+
 	affine := NewAffine().fromGdal(geoTransform)
 
 	vrtBounds := d.Bounds()
-	fmt.Printf("vrt_bounds:%+v\n", vrtBounds)
 
 	tileBounds := tileId.MercatorBounds()
-	//{ xmin: 12598145.158510394, ymin: 4056598.475505117, xmax: 12735174.509188766, ymax: 4194245.511960808 }
-	fmt.Printf("tile_bounds:%+v\n", tileBounds)
 
 	windows := NewWindows().fromBounds(affine, tileBounds)
-	fmt.Printf("windows:%+v\n", windows)
+
+	tileTransform := windows.transform(affine).scale(windows.width/256, windows.height/256)
+
+	xres, yres := tileTransform.resolution()
+
+	left := math.Max(0, math.Round((vrtBounds.xmin-tileBounds.xmin)/xres))
+	right := math.Max(0, math.Round((tileBounds.xmax-vrtBounds.xmax)/xres))
+	bottom := math.Max(0, math.Round((vrtBounds.ymin-tileBounds.ymin)/yres))
+	top := math.Max(0, math.Round((tileBounds.ymax-vrtBounds.ymax)/yres))
+
+	widthUsize := int(math.Round(float64(tileSize) - left - right))
+	heightUsize := int(math.Round(float64(tileSize) - top - bottom))
+
+	xOffset := int(math.Round(math.Min(vrtWidthF, math.Max(0, windows.xOffset))))
+	yOffset := int(math.Round(math.Min(vrtHeightF, math.Max(0, windows.yOffset))))
+	xStop := int(math.Min(vrtWidthF, math.Max(0, windows.xOffset+windows.width)))
+	yStop := int(math.Min(vrtHeightF, math.Max(0, windows.yOffset+windows.height)))
+	readWidth := int(float64(xStop-xOffset) + 0.5)
+	readHeight := int(float64(yStop-yOffset) + 0.5)
+	if readWidth <= 0 || readHeight <= 0 {
+		return
+	}
+
+	join := filepath.Join(fmt.Sprintf("tmp/%d/%d/%d.png", tileId.z, tileId.x, tileId.y))
+
+	basepath := filepath.Dir(join)
+	if _, err := os.Stat(basepath); os.IsNotExist(err) {
+		err := os.MkdirAll(basepath, 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	span := widthUsize * heightUsize
+	tmp := make([]byte, span, span)
+	err := d.vrtDataset.IO(gdal.Read, xOffset, yOffset, readWidth, readHeight, tmp, widthUsize, heightUsize, d.vrtDataset.RasterCount(), []int{1, 2, 3}, 0, 0, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	//create, err := godal.Create(godal.GTiff, join, d.vrtDataset.RasterCount(), godal.Byte, 256, 256)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//fmt.Printf("tmplen:%d widthSpan:%d heightUsize:%d\n", len(tmp), widthUsize*heightUsize, heightUsize)
+	//err = create.Write(0, 0, tmp, span*3, span*3)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer create.Close()
+	utils.WriteFinal(heightUsize, widthUsize, tmp, join)
+	//utils.Write(3, widthUsize, heightUsize, tmp, join)
+
+	//utils.Write2(3, xOffset, yOffset, readWidth, readHeight, widthUsize, heightUsize, join, d.vrtDataset)
 
 }
 
 func (d *Dataset) Bounds() *Bounds {
-	w := d.dataset.Structure().SizeX
-	h := d.dataset.Structure().SizeY
-	geoTransform, err := d.dataset.GeoTransform()
-	if err != nil {
-		panic(err)
-	}
+	w := d.vrtDataset.RasterXSize()
+	h := d.vrtDataset.RasterYSize()
+	geoTransform := d.vrtDataset.GeoTransform()
 	affine := NewAffine().fromGdal(geoTransform)
 
 	return &Bounds{
@@ -293,60 +371,46 @@ func (d *Dataset) TransformBounds(crs *godal.SpatialRef) *Bounds {
 }
 
 func (d *Dataset) mercatorVrt() *Dataset {
-	epsg, _ := godal.NewSpatialRefFromEPSG(3857)
-	vrt := d.warpedVrt(epsg)
+	vrt := d.warpedVrt()
 	return &Dataset{
-		dataset:       vrt,
+		vrtDataset:    vrt,
 		originDataSet: d.originDataSet,
 	}
 }
 
-func (d *Dataset) warpedVrt(dst *godal.SpatialRef) *godal.Dataset {
-	epsg, err := godal.NewSpatialRefFromEPSG(3857)
+func (d *Dataset) warpedVrt() gdal.Dataset {
+	dataset, err := gdal.Open(d.originDataSet, gdal.ReadOnly)
 	if err != nil {
 		panic(err)
 	}
-	dstSpa, _ := epsg.WKT()
-	dataset, err := godal.BuildVRT("demo.vrt", []string{d.originDataSet},
-		[]string{
-			"-r", "nearest",
-			"-a_srs", dstSpa,
-		},
-		godal.ConfigOption(
-			"GDAL_NUM_THREADS=1",
-			"NUM_THREADS=1",
-			"eResampleAlg=nearest"),
-		godal.Resampling(godal.Nearest))
+	wkt, err := d.dataset.SpatialRef().WKT()
 	if err != nil {
 		panic(err)
 	}
-	open, err := gdal.Open(d.originDataSet, gdal.ReadOnly)
+	reference, _ := godal.NewSpatialRefFromEPSG(3857)
+	dst, err := reference.WKT()
 	if err != nil {
 		panic(err)
 	}
 
-	spatialRef := d.dataset.SpatialRef()
-	wkt, err := spatialRef.WKT()
+	vrt, err := dataset.AutoCreateWarpedVRT(wkt, dst, gdal.GRA_NearestNeighbour)
 	if err != nil {
 		panic(err)
 	}
-	vrt, err := gdal.BuildVRT(
-		"",
-		[]gdal.Dataset{open},
-		[]string{d.originDataSet},
-		[]string{
-			"srcSRS", wkt,
-			"VRTSRS", dstSpa,
-			"resampling", "NearestNeighbor",
-		})
+	//vrtWarp, err := gdal.Warp("demo_wrap.vrt",
+	//	nil,
+	//	[]gdal.Dataset{dataset}, []string{
+	//		"-r", "near",
+	//		"-t_srs", "EPSG:3857",
+	//		"-of", "VRT",
+	//		"-wm", "512",
+	//		"-multi", "2",
+	//	})
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("vrt:%+v\n", vrt.RasterXSize())
-	fmt.Printf("vrt:%+v\n", vrt.RasterYSize())
-
-	return dataset
+	return vrt
 }
 
 // -----------

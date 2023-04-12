@@ -17,14 +17,14 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"image/png"
 	"math"
 	"os"
 	"path/filepath"
 
 	"github.com/airbusgeo/godal"
 	"github.com/lukeroth/gdal"
-
-	"tile_grid/utils"
 )
 
 func main() {
@@ -37,11 +37,31 @@ func main() {
 
 	bounds := dataset.TransformBounds(epsg)
 	vrt := dataset.mercatorVrt()
-	for i := 8; i < 11; i++ {
+	for i := 7; i < 11; i++ {
 		tileRange := NewTileRange().TileRange(i, bounds)
-
 		tileRange.iter(func(tileId *TileId) {
-			vrt.ReadTile(tileId, 256)
+			join := filepath.Join(fmt.Sprintf("tmp/%d/%d/%d.png", tileId.z, tileId.x, tileId.y))
+
+			basepath := filepath.Dir(join)
+			if _, err := os.Stat(basepath); os.IsNotExist(err) {
+				err := os.MkdirAll(basepath, 0755)
+				if err != nil {
+					panic(err)
+				}
+			}
+			buf := vrt.ReadTile(tileId, 256)
+
+			img := &image.Gray{
+				Pix:    buf,
+				Stride: 256,
+				Rect:   image.Rect(0, 0, 256, 256),
+			}
+
+			f, _ := os.Create(join)
+			err = png.Encode(f, img)
+			if err != nil {
+				return
+			}
 			return
 		})
 	}
@@ -254,7 +274,7 @@ func NewDataset(path string) *Dataset {
 
 }
 
-func (d *Dataset) ReadTile(tileId *TileId, tileSize int) {
+func (d *Dataset) ReadTile(tileId *TileId, tileSize int) []byte {
 
 	vrtWidthF := float64(d.vrtDataset.RasterXSize())
 	vrtHeightF := float64(d.vrtDataset.RasterYSize())
@@ -278,51 +298,77 @@ func (d *Dataset) ReadTile(tileId *TileId, tileSize int) {
 	bottom := math.Max(0, math.Round((vrtBounds.ymin-tileBounds.ymin)/yres))
 	top := math.Max(0, math.Round((tileBounds.ymax-vrtBounds.ymax)/yres))
 
-	widthUsize := int(math.Round(float64(tileSize) - left - right))
-	heightUsize := int(math.Round(float64(tileSize) - top - bottom))
+	widthSize := int(math.Round(float64(tileSize) - left - right))
+	heightSize := int(math.Round(float64(tileSize) - top - bottom))
 
-	xOffset := int(math.Round(math.Min(vrtWidthF, math.Max(0, windows.xOffset))))
-	yOffset := int(math.Round(math.Min(vrtHeightF, math.Max(0, windows.yOffset))))
-	xStop := int(math.Min(vrtWidthF, math.Max(0, windows.xOffset+windows.width)))
-	yStop := int(math.Min(vrtHeightF, math.Max(0, windows.yOffset+windows.height)))
-	readWidth := int(float64(xStop-xOffset) + 0.5)
-	readHeight := int(float64(yStop-yOffset) + 0.5)
+	xOffset := math.Round(math.Min(vrtWidthF, math.Max(0, windows.xOffset)))
+	yOffset := math.Round(math.Min(vrtHeightF, math.Max(0, windows.yOffset)))
+	xStop := math.Min(vrtWidthF, math.Max(0, windows.xOffset+windows.width))
+	yStop := math.Min(vrtHeightF, math.Max(0, windows.yOffset+windows.height))
+
+	readWidth := int(math.Floor(float64(xStop-xOffset) + 0.5))
+	readHeight := int(math.Floor(float64(yStop-yOffset) + 0.5))
 	if readWidth <= 0 || readHeight <= 0 {
-		return
+		return nil
 	}
 
-	join := filepath.Join(fmt.Sprintf("tmp/%d/%d/%d.png", tileId.z, tileId.x, tileId.y))
+	//span := widthsize * heightsize * d.vrtDataset.RasterCount()
+	//tmp := make([]byte, span, span)
+	//err := d.vrtDataset.IO(gdal.Read, xOffset, yOffset, readWidth, readHeight, tmp, widthsize, heightsize, d.vrtDataset.RasterCount(), []int{1, 2, 3}, 0, 0, 0)
+	//if err != nil {
+	//	panic(err)
+	//}
 
-	basepath := filepath.Dir(join)
-	if _, err := os.Stat(basepath); os.IsNotExist(err) {
-		err := os.MkdirAll(basepath, 0755)
-		if err != nil {
-			panic(err)
-		}
+	//span := widthSize * heightSize
+	tmp := make([]byte, 256*256, 256*256)
+
+	for i := range tmp {
+		tmp[i] = 255
 	}
 
-	span := widthUsize * heightUsize
-	tmp := make([]byte, span, span)
-	err := d.vrtDataset.IO(gdal.Read, xOffset, yOffset, readWidth, readHeight, tmp, widthUsize, heightUsize, d.vrtDataset.RasterCount(), []int{1, 2, 3}, 0, 0, 0)
+	err := d.vrtDataset.RasterBand(1).IO(gdal.Read, int(xOffset), int(yOffset), readWidth, readHeight, tmp, widthSize, heightSize, 0, 0)
 	if err != nil {
 		panic(err)
 	}
 
+	if left > 0 || top > 0 || widthSize < tileSize || heightSize < tileSize {
+		buff := shift(tileId, tmp, [2]int{widthSize, heightSize}, [2]int{tileSize, tileSize}, [2]int{int(left), int(top)}, 255)
+		tmp = buff
+	}
+
+	return tmp
 	//create, err := godal.Create(godal.GTiff, join, d.vrtDataset.RasterCount(), godal.Byte, 256, 256)
 	//if err != nil {
 	//	panic(err)
 	//}
-	//fmt.Printf("tmplen:%d widthSpan:%d heightUsize:%d\n", len(tmp), widthUsize*heightUsize, heightUsize)
+	//fmt.Printf("tmplen:%d widthSpan:%d heightsize:%d\n", len(tmp), widthsize*heightsize, heightsize)
 	//err = create.Write(0, 0, tmp, span*3, span*3)
 	//if err != nil {
 	//	panic(err)
 	//}
 	//defer create.Close()
-	utils.WriteFinal(heightUsize, widthUsize, tmp, join)
-	//utils.Write(3, widthUsize, heightUsize, tmp, join)
+	//utils.WriteFinal(heightsize, widthsize, tmp, join)
+	//utils.Write(3, widthsize, heightsize, tmp, join)
 
-	//utils.Write2(3, xOffset, yOffset, readWidth, readHeight, widthUsize, heightUsize, join, d.vrtDataset)
+	//utils.Write2(3, xOffset, yOffset, readWidth, readHeight, widthsize, heightsize, join, d.vrtDataset)
 
+}
+
+func shift(tileId *TileId, buffer []byte, size, targetSize, offset [2]int, fill byte) []byte {
+	var srcIndex, destIndex int
+
+	for row := size[1] - 1; row >= 0; row-- {
+		for col := size[0] - 1; col >= 0; col-- {
+			srcIndex = row*size[0] + col
+			destIndex = (row+offset[1])*targetSize[0] + (col + offset[0])
+			buffer[destIndex] = buffer[srcIndex]
+
+			if destIndex != srcIndex {
+				buffer[srcIndex] = fill
+			}
+		}
+	}
+	return buffer
 }
 
 func (d *Dataset) Bounds() *Bounds {

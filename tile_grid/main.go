@@ -18,6 +18,7 @@ package main
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"image/png"
 	"math"
 	"os"
@@ -49,12 +50,46 @@ func main() {
 					panic(err)
 				}
 			}
-			buf := vrt.ReadTile(tileId, 256)
 
-			img := &image.Gray{
-				Pix:    buf,
-				Stride: 256,
-				Rect:   image.Rect(0, 0, 256, 256),
+			//buf := vrt.ReadTile(tileId, 256)
+			//
+			//img := &image.Gray{
+			//	Pix:    buf,
+			//	Stride: 256,
+			//	Rect:   image.Rect(0, 0, 256, 256),
+			//}
+			//
+			//f, _ := os.Create(join)
+			//err = png.Encode(f, img)
+			//if err != nil {
+			//	return
+			//}
+
+			width := 256
+			height := 256
+			bandData := vrt.ReadTile(tileId, 256)
+			red := make([][]byte, height)
+			for i := range red {
+				red[i] = bandData[0][i*width : (i+1)*width]
+			}
+
+			green := make([][]byte, height)
+			for i := range green {
+				green[i] = bandData[1][i*width : (i+1)*width]
+			}
+			blue := make([][]byte, height)
+			for i := range blue {
+				blue[i] = bandData[2][i*width : (i+1)*width]
+			}
+
+			img := image.NewRGBA(image.Rect(0, 0, width, height))
+			for y := 0; y < height; y++ {
+				for x := 0; x < width; x++ {
+					r := red[y][x]
+					g := green[y][x]
+					b := blue[y][x]
+					img.SetRGBA(x, y, color.RGBA{R: r, G: g, B: b, A: 255})
+				}
 			}
 
 			f, _ := os.Create(join)
@@ -62,7 +97,6 @@ func main() {
 			if err != nil {
 				return
 			}
-			return
 		})
 	}
 	vrt.vrtDataset.Close()
@@ -274,7 +308,7 @@ func NewDataset(path string) *Dataset {
 
 }
 
-func (d *Dataset) ReadTile(tileId *TileId, tileSize int) []byte {
+func (d *Dataset) ReadTile(tileId *TileId, tileSize int) [][]byte {
 
 	vrtWidthF := float64(d.vrtDataset.RasterXSize())
 	vrtHeightF := float64(d.vrtDataset.RasterYSize())
@@ -319,39 +353,46 @@ func (d *Dataset) ReadTile(tileId *TileId, tileSize int) []byte {
 	//	panic(err)
 	//}
 
-	//span := widthSize * heightSize
-	tmp := make([]byte, 256*256, 256*256)
+	//tmp := make([]byte, 256*256, 256*256)
 
-	for i := range tmp {
-		tmp[i] = 255
-	}
+	//for i := range tmp {
+	//	tmp[i] = 255
+	//}
 
-	err := d.vrtDataset.RasterBand(1).IO(gdal.Read, int(xOffset), int(yOffset), readWidth, readHeight, tmp, widthSize, heightSize, 0, 0)
-	if err != nil {
-		panic(err)
-	}
-
-	if left > 0 || top > 0 || widthSize < tileSize || heightSize < tileSize {
-		buff := shift(tileId, tmp, [2]int{widthSize, heightSize}, [2]int{tileSize, tileSize}, [2]int{int(left), int(top)}, 255)
-		tmp = buff
-	}
-
-	return tmp
-	//create, err := godal.Create(godal.GTiff, join, d.vrtDataset.RasterCount(), godal.Byte, 256, 256)
+	//err := d.vrtDataset.RasterBand(1).IO(gdal.Read, int(xOffset), int(yOffset), readWidth, readHeight, tmp, widthSize, heightSize, 0, 0)
 	//if err != nil {
 	//	panic(err)
 	//}
-	//fmt.Printf("tmplen:%d widthSpan:%d heightsize:%d\n", len(tmp), widthsize*heightsize, heightsize)
-	//err = create.Write(0, 0, tmp, span*3, span*3)
-	//if err != nil {
-	//	panic(err)
+	//
+	//if left > 0 || top > 0 || widthSize < tileSize || heightSize < tileSize {
+	//	buff := shift(tileId, tmp, [2]int{widthSize, heightSize}, [2]int{tileSize, tileSize}, [2]int{int(left), int(top)}, 255)
+	//	tmp = buff
 	//}
-	//defer create.Close()
-	//utils.WriteFinal(heightsize, widthsize, tmp, join)
-	//utils.Write(3, widthsize, heightsize, tmp, join)
 
-	//utils.Write2(3, xOffset, yOffset, readWidth, readHeight, widthsize, heightsize, join, d.vrtDataset)
+	bandCount := d.vrtDataset.RasterCount()
+	bands := make([][]byte, bandCount)
+	for i := 0; i < bandCount; i++ {
+		band := d.vrtDataset.RasterBand(i + 1)
 
+		data := make([]byte, 256*256, 256*256)
+
+		for i := range data {
+			data[i] = 255
+		}
+		err := band.IO(gdal.Read, int(xOffset), int(yOffset), readWidth, readHeight, data, widthSize, heightSize, 0, 0)
+		if err != nil {
+			panic(err)
+		}
+
+		if left > 0 || top > 0 || widthSize < tileSize || heightSize < tileSize {
+			buff := shift(tileId, data, [2]int{widthSize, heightSize}, [2]int{tileSize, tileSize}, [2]int{int(left), int(top)}, 255)
+			data = buff
+		}
+
+		bands[i] = data
+	}
+
+	return bands
 }
 
 func shift(tileId *TileId, buffer []byte, size, targetSize, offset [2]int, fill byte) []byte {

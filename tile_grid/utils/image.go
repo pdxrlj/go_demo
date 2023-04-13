@@ -9,7 +9,6 @@ import (
 )
 
 func WriteFinal(width, height int, imageData []byte, filename string) {
-	fmt.Println("width:", width, "height:", height)
 	img := image.NewRGBA(image.Rect(0, 0, 256, 256))
 
 	var pixels [][][]uint8
@@ -18,10 +17,6 @@ func WriteFinal(width, height int, imageData []byte, filename string) {
 		for j := 0; j < width; j++ {
 			pixel := make([]uint8, 3)
 			for k := 0; k < 3; k++ {
-				if (i*width+j)*3+k >= len(imageData) {
-					pixel[k] = 0
-					continue
-				}
 				pixel[k] = imageData[(i*width+j)*3+k]
 			}
 			row[j] = pixel

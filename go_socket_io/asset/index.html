@@ -27,8 +27,15 @@
 <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
-    var socket = io("127.0.0.1:8000/demo");
+    var socket = io({
+        path:"/demo",
+        transports:["websocket"]
+    });
     var s2 = io("/chat");
+
+    socket.on("connect", function(){
+        console.log("connected");
+    });
 
     socket.on('reply', function(msg){
         $('#messages').append($('<li>').text(msg));

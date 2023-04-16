@@ -1,14 +1,22 @@
 <!doctype html>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 <html>
+
 <head>
     <title>Socket.IO chat</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font: 13px Helvetica, Arial; }
-        form { background: #000; padding: 3px; bottom: 0; width: 100%; margin-top: 450px}
-        form input { border: 0; padding: 10px; width: 400px; margin-right: .5%; }
-        form button { width: 80px; background: red; border: none; padding: 10px; }
+        #send_box{
+            display: flex;
+            justify-content: space-between;
+            margin-top: 450px;
+        }
+        #send_box input{
+            width: 70%;
+        }
 
+        #send_box button{
+            width: 20%;
+        }
         #box { background: #eee; margin: 50px auto; border: 1px solid red; width: 500px; height: 500px}
         #messages { list-style-type: none; margin: 0; padding: 0; }
         #messages li { padding: 5px 10px; }
@@ -18,39 +26,47 @@
 <body>
 <div id="box">
     <ul id="messages"></ul>
-    <form action="">
-        <input id="m" autocomplete="off" />
-        <button>Send</button>
-    </form>
+    <div id="send_box">
+        <input id="content" type="text">
+        <button id="send" type="submit">发送</button>
+    </div>
 </div>
 
 <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
-    var socket = io({
-        path:"/demo",
+    var s = io('http://127.0.0.1:8000/',{
+        path:"/demo/",
         transports:["websocket"]
     });
-    var s2 = io("/chat");
 
-    socket.on("connect", function(){
+
+    s.on("connect", function(){
         console.log("connected");
     });
 
-    socket.on('reply', function(msg){
+    s.on('reply', function(msg){
         $('#messages').append($('<li>').text(msg));
     });
 
-    $('form').submit(function(){
-        s2.emit('msg', $('#m').val(), function(data){
+    
+    $('#send').click(function () {
+        var s2 = io('http://127.0.0.1:8000/chat',{
+            path:"/demo/",
+            transports:["websocket"]
+        });
+        console.log("click", $('#content').val())
+        s2.emit('msg', $('#content').val(), function(data){
             $('#messages').append($('<li>').text('ACK CALLBACK: ' + data));
         });
+    })
 
-        socket.emit('notice', $('#m').val());
 
-        $('#m').val('');
-        return false;
-    });
+    s.emit('notice', $('#content').val());
+
+    $('#content').val('');
+
+
 </script>
 </body>
 </html>

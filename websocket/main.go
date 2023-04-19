@@ -38,13 +38,17 @@ func main() {
 		if uid == "" {
 			panic("uid is empty")
 		}
+		extra := r.URL.Query().Get("extra")
+		if extra == "" {
+			panic("extra is empty")
+		}
 		if exists := defaultRoomsManager.Exists(defaultRoom, uid); exists {
 			return
 		}
 
 		fmt.Printf("new user conn:%v\n", uid)
 		// add to rooms
-		users := defaultRoomsManager.AddToRooms(defaultRoom, uid, conn)
+		users := defaultRoomsManager.AddToRooms(defaultRoom, uid, extra, conn)
 
 		go func(uid string) {
 			defer func(uid string) {
@@ -59,7 +63,7 @@ func main() {
 						Type:    content.Type,
 						Content: content.Content,
 					}
-
+					fmt.Printf("read send message: %+v from:%v to:%v\n", sendMessage.Type, sendMessage.From, sendMessage.To)
 					// 发送消息
 					users.Write(sendMessage)
 					return nil

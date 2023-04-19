@@ -33,13 +33,13 @@ func NewDefaultRooms() *Rooms {
 	}
 }
 
-func (r *Rooms) AddToRooms(room, uid string, c net.Conn) *Users {
+func (r *Rooms) AddToRooms(room, uid, extra string, c net.Conn) *Users {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	if _, ok := r.rooms[room]; !ok {
 		r.rooms[room] = NewUsers()
 	}
-	r.rooms[room].AddToUsers(uid, c)
+	r.rooms[room].AddToUsers(uid, extra, c)
 	return r.rooms[room]
 }
 
@@ -113,11 +113,13 @@ func (r *Rooms) GetRooms(room string) {
 		fmt.Printf("room %s not exists\n", room)
 		return
 	}
-	var uids []string
+	uids := make(map[string]string)
 	users.Each(func(c net.Conn, uid string) error {
-		uids = append(uids, uid)
+		uids[uid] = users.users[uid].extra
 		return nil
 	}, nil)
+
+	fmt.Printf("room %s users: %+v\n", room, uids)
 
 	bytesContent, err := jsoniter.MarshalToString(&uids)
 	if err != nil {

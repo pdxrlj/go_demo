@@ -14,8 +14,9 @@ import (
 )
 
 type user struct {
-	c    net.Conn
-	tick *time.Ticker
+	c     net.Conn
+	tick  *time.Ticker
+	extra string
 }
 
 type Users struct {
@@ -50,22 +51,25 @@ func (u *Users) PingCheck(uid string) error {
 	return wsutil.WriteServerMessage(u.users[uid].c, ws.OpText, bytes)
 }
 
-func (u *Users) AddToUsers(uid string, c net.Conn) {
+func (u *Users) AddToUsers(uid, extra string, c net.Conn) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.users[uid] = &user{
-		c:    c,
-		tick: time.NewTicker(15 * time.Second),
+		c:     c,
+		tick:  time.NewTicker(15 * time.Second),
+		extra: extra,
 	}
 	// 发送心跳包
 	go func() {
 		for {
-			select {
-			case <-u.users[uid].tick.C:
-				if err := u.PingCheck(uid); err != nil {
-					fmt.Printf("ping uid:%v error: %v\n", uid, err)
-					u.RemoveUser(uid)
-					return
+			if u.users[uid] != nil {
+				select {
+				case <-u.users[uid].tick.C:
+					if err := u.PingCheck(uid); err != nil {
+						fmt.Printf("ping uid:%v error: %v\n", uid, err)
+						u.RemoveUser(uid)
+						return
+					}
 				}
 			}
 		}
@@ -190,7 +194,6 @@ func (u *Users) Read(uid string, handler ReadHandler[*ReceiveMessage]) error {
 	}
 
 	return HandlerReadContent(message, func(content *ReceiveMessage) error {
-		fmt.Printf("content: %+v\n", content)
 		return handler(content)
 	}, func(next ReadHandler[*ReceiveMessage]) ReadHandler[*ReceiveMessage] {
 		return func(content *ReceiveMessage) error {
@@ -198,7 +201,7 @@ func (u *Users) Read(uid string, handler ReadHandler[*ReceiveMessage]) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			fmt.Printf("read message: %+v\n", message)
+			//fmt.Printf("read message: %+v\n", message)
 			return next(message)
 		}
 	}, func(next ReadHandler[*ReceiveMessage]) ReadHandler[*ReceiveMessage] {
@@ -210,7 +213,7 @@ func (u *Users) Read(uid string, handler ReadHandler[*ReceiveMessage]) error {
 			}
 
 			// offer 消息交换
-			if content.Type == "description" {
+			if content.Type == "offer" {
 				return next(content)
 			}
 
@@ -230,13 +233,7 @@ func (u *Users) Write(message *SendMessage) {
 	}
 
 	if err = wsutil.WriteServerMessage(u.users[message.To].c, ws.OpText, bytesContent); err != nil {
-		opErr := &net.OpError{}
-		if errors.As(err, &opErr) && opErr.Op == "write" && opErr.Err.Error() == "use of closed network connection" {
-			u.RemoveUser(message.To)
-			return
-		} else {
-			panic(err)
-		}
+		fmt.Printf("write to user %v error: %v\n", message.To, err)
 	}
 }
 

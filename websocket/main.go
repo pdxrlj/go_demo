@@ -43,10 +43,8 @@ func main() {
 			panic("extra is empty")
 		}
 		if exists := defaultRoomsManager.Exists(defaultRoom, uid); exists {
-			return
+			defaultRoomsManager.DisconnectUser(defaultRoom, uid)
 		}
-
-		fmt.Printf("new user conn:%v\n", uid)
 		// add to rooms
 		users := defaultRoomsManager.AddToRooms(defaultRoom, uid, extra, conn)
 

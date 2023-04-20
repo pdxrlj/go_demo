@@ -10,10 +10,6 @@ import (
 	"github.com/googollee/go-socket.io"
 )
 
-var allowOriginFunc = func(r *http.Request) bool {
-	return true
-}
-
 func main() {
 	server := socketio.NewServer(nil)
 

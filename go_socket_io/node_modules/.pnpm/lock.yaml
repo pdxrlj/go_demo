@@ -1,0 +1,108 @@
+lockfileVersion: 5.4
+
+specifiers:
+  socket.io-client: ^4.6.1
+
+dependencies:
+  socket.io-client: registry.npmmirror.com/socket.io-client/4.6.1
+
+packages:
+
+  registry.npmmirror.com/@socket.io/component-emitter/3.1.0:
+    resolution: {integrity: sha512-+9jVqKhRSpsc591z5vX+X5Yyw+he/HCB4iQ/RYxw35CEPaY1gnsNE43nf9n9AaYjAQrTiI/mOwKUKdUs9vf7Xg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@socket.io/component-emitter/-/component-emitter-3.1.0.tgz}
+    name: '@socket.io/component-emitter'
+    version: 3.1.0
+    dev: false
+
+  registry.npmmirror.com/debug/4.3.4:
+    resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/debug/-/debug-4.3.4.tgz}
+    name: debug
+    version: 4.3.4
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
+    dependencies:
+      ms: registry.npmmirror.com/ms/2.1.2
+    dev: false
+
+  registry.npmmirror.com/engine.io-client/6.4.0:
+    resolution: {integrity: sha512-GyKPDyoEha+XZ7iEqam49vz6auPnNJ9ZBfy89f+rMMas8AuiMWOZ9PVzu8xb9ZC6rafUqiGHSCfu22ih66E+1g==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/engine.io-client/-/engine.io-client-6.4.0.tgz}
+    name: engine.io-client
+    version: 6.4.0
+    dependencies:
+      '@socket.io/component-emitter': registry.npmmirror.com/@socket.io/component-emitter/3.1.0
+      debug: registry.npmmirror.com/debug/4.3.4
+      engine.io-parser: registry.npmmirror.com/engine.io-parser/5.0.6
+      ws: registry.npmmirror.com/ws/8.11.0
+      xmlhttprequest-ssl: registry.npmmirror.com/xmlhttprequest-ssl/2.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  registry.npmmirror.com/engine.io-parser/5.0.6:
+    resolution: {integrity: sha512-tjuoZDMAdEhVnSFleYPCtdL2GXwVTGtNjoeJd9IhIG3C1xs9uwxqRNEu5WpnDZCaozwVlK/nuQhpodhXSIMaxw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/engine.io-parser/-/engine.io-parser-5.0.6.tgz}
+    name: engine.io-parser
+    version: 5.0.6
+    engines: {node: '>=10.0.0'}
+    dev: false
+
+  registry.npmmirror.com/ms/2.1.2:
+    resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/ms/-/ms-2.1.2.tgz}
+    name: ms
+    version: 2.1.2
+    dev: false
+
+  registry.npmmirror.com/socket.io-client/4.6.1:
+    resolution: {integrity: sha512-5UswCV6hpaRsNg5kkEHVcbBIXEYoVbMQaHJBXJCyEQ+CiFPV1NIOY0XOFWG4XR4GZcB8Kn6AsRs/9cy9TbqVMQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/socket.io-client/-/socket.io-client-4.6.1.tgz}
+    name: socket.io-client
+    version: 4.6.1
+    engines: {node: '>=10.0.0'}
+    dependencies:
+      '@socket.io/component-emitter': registry.npmmirror.com/@socket.io/component-emitter/3.1.0
+      debug: registry.npmmirror.com/debug/4.3.4
+      engine.io-client: registry.npmmirror.com/engine.io-client/6.4.0
+      socket.io-parser: registry.npmmirror.com/socket.io-parser/4.2.2
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  registry.npmmirror.com/socket.io-parser/4.2.2:
+    resolution: {integrity: sha512-DJtziuKypFkMMHCm2uIshOYC7QaylbtzQwiMYDuCKy3OPkjLzu4B2vAhTlqipRHHzrI0NJeBAizTK7X+6m1jVw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/socket.io-parser/-/socket.io-parser-4.2.2.tgz}
+    name: socket.io-parser
+    version: 4.2.2
+    engines: {node: '>=10.0.0'}
+    dependencies:
+      '@socket.io/component-emitter': registry.npmmirror.com/@socket.io/component-emitter/3.1.0
+      debug: registry.npmmirror.com/debug/4.3.4
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  registry.npmmirror.com/ws/8.11.0:
+    resolution: {integrity: sha512-HPG3wQd9sNQoT9xHyNCXoDUa+Xw/VevmY9FoHyQ+g+rrMn4j6FB4np7Z0OhdTgjx6MgQLK7jwSy1YecU1+4Asg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/ws/-/ws-8.11.0.tgz}
+    name: ws
+    version: 8.11.0
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: ^5.0.2
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
+
+  registry.npmmirror.com/xmlhttprequest-ssl/2.0.0:
+    resolution: {integrity: sha512-QKxVRxiRACQcVuQEYFsI1hhkrMlrXHPegbbd1yn9UHOmRxY+si12nQYzri3vbzt8VdTTRviqcKxcyllFas5z2A==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/xmlhttprequest-ssl/-/xmlhttprequest-ssl-2.0.0.tgz}
+    name: xmlhttprequest-ssl
+    version: 2.0.0
+    engines: {node: '>=0.4.0'}
+    dev: false

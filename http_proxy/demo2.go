@@ -111,7 +111,7 @@ func handle2(client net.Conn) {
 	} else {
 		_, _ = servers.Write(b)
 
-		u, _ := url.Parse(address)
+		u, _ := url.Parse("http://" + address)
 		r := &http.Request{
 			Method: method,
 			URL:    u,
@@ -119,13 +119,12 @@ func handle2(client net.Conn) {
 
 		resp, err := httpClient(servers).Do(r)
 		if err != nil {
-			log.Println("do:", err)
+			log.Println("====================================do:", err)
 			return
 		}
-		fmt.Printf("resp:%v\n", resp.Trailer)
+		fmt.Printf("================resp:%v\n", resp.Trailer)
+		resp.Body.Close()
 	}
 	go io.Copy(servers, client)
-	if servers != nil {
-		io.Copy(client, servers)
-	}
+	io.Copy(client, servers)
 }

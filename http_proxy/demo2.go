@@ -71,16 +71,9 @@ func handle2(client net.Conn) {
 		var tmp [1024]byte
 		n, err := client.Read(tmp[:])
 
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				log.Printf("error:%T, err:%v\n", err, err)
-				return
-			}
-		}
-		if n == 0 {
-			break
+		if err != nil && err != io.EOF {
+			log.Printf("error:%T, err:%v\n", err, err)
+			return
 		}
 
 		b = append(b, tmp[:n]...)

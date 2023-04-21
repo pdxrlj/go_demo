@@ -117,13 +117,13 @@ func handle2(client net.Conn) {
 			URL:    u,
 		}
 
-		resp, err := httpClient(servers).Do(r)
+		_, err := httpClient(servers).Do(r)
 		if err != nil {
 			log.Println("====================================do:", err)
 			return
 		}
-		fmt.Printf("================resp:%v\n", resp.Trailer)
-		resp.Body.Close()
+
+		//resp.Body.Close()
 	}
 	go io.Copy(servers, client)
 	io.Copy(client, servers)

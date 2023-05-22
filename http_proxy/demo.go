@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// tcp 连接，监听 8080 端口
-	l, err := net.Listen("tcp", ":8081")
+	l, err := net.Listen("tcp", ":8082")
 	if err != nil {
 		log.Panic(err)
 	}

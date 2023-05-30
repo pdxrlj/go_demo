@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -10,7 +11,51 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Person struct {
+	Name     string `json:"name"`
+	Age      int    `json:"age"`
+	Password any    `json:"-"`
+}
+
+func (p Person) MarshalJSON() ([]byte, error) {
+	type Alias Person
+	return json.Marshal(&struct {
+		Alias
+		Password any `json:"password"`
+	}{
+		Alias:    (Alias)(p),
+		Password: p.Password,
+	})
+}
+
+func TestMap(m map[string]string) {
+	(m)["a"] = "gggggggggg"
+}
+
 func main() {
+	b := make(map[string]string)
+	b["a"] = "b"
+	b["c"] = "d"
+	TestMap(b)
+	fmt.Println(b)
+	return
+
+	p := Person{
+		Name:     "Alice",
+		Age:      25,
+		Password: []byte("123456"),
+	}
+
+	data, err := json.Marshal(p)
+	if err != nil {
+		fmt.Println("JSON序列化失败:", err)
+		return
+	}
+
+	fmt.Println(string(data))
+
+	return
+
 	url := "https://www.baidu.com"
 
 	before, _, found := strings.Cut(url, "?")

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>
+    用户列表
+    <span id="myid"></span>
+</h1>
+<ul id="user_list">
+
+</ul>
+
+<video id="localVideo" autoplay controls width="250" ></video>
+<video id="remoteVideo" autoplay controls width="250"></video>
+
+
+<script>
+    let localStream = null;
+    let remoteStream = null;
+    let remoteUserId = null;
+    let pendingCandidates = []
+
+    let randUserIdStr="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let randUserId="";
+    for (let i=0;i<10;i++){
+        randUserId+=randUserIdStr[Math.floor(Math.random()*randUserIdStr.length)];
+    }
+
+    document.getElementById("myid").innerText=randUserId;
+
+    let socket=new WebSocket(`wss://127.0.0.1:3000/ws?user=${randUserId}`);
+
+    socket.onopen=function () {
+        console.log("socket open");
+        socket.send(JSON.stringify({
+            from:randUserId,
+            to:"all",
+        }))
+    }
+
+
+
+
+    const pc= new RTCPeerConnection();
+
+    navigator.getUserMedia({video: true, audio: true}, (stream) => {
+        localStream = stream;
+        document.getElementById("localVideo").srcObject=localStream;
+
+        localStream.getTracks().forEach((track) => {
+            pc.addTrack(track, localStream);
+        });
+    }, (error) => {
+        console.log(error);
+    });
+
+
+    let userList=document.getElementById("user_list");
+
+    pc.signalingstatechange = function (evt) {
+        console.log('signalingstatechange', pc.signalingState)
+        if (pc.signalingState === 'stable') {
+            for (const candidate of pendingCandidates) {
+                pc.addIceCandidate(candidate)
+            }
+        }
+    }
+
+    socket.onmessage=function (msg) {
+        msg=JSON.parse(msg.data);
+        console.log("socket onmessage from:",msg.from,"to:",msg.to,"msg:",msg);
+        if (msg.to==="all"){
+            let li=document.createElement("li");
+            li.innerText=msg.from;
+            li.style.cursor="pointer";
+            li.onclick=function () {
+                remoteUserId=msg.from;
+
+                pc.createOffer().then((offer) => {
+                    pc.setLocalDescription(offer);
+                    socket.send(JSON.stringify({
+                        from:randUserId,
+                        to:remoteUserId,
+                        offer:offer
+                    }));
+
+                    console.log("user:",randUserId,"send to user offer:",remoteUserId)
+                });
+
+                pc.onicecandidate=(event)=>{
+                    if (event.candidate){
+                        socket.send(JSON.stringify({
+                            from:randUserId,
+                            to:remoteUserId,
+                            candidate:event.candidate
+                        }));
+                    }
+                }
+
+
+            }
+            userList.appendChild(li);
+        }
+
+        if (msg.candidate){
+            pendingCandidates.push(msg.candidate)
+        }
+
+
+        if (msg.offer){
+            console.log("收到offer:",msg.from,"发送给:",msg.to)
+            pc.setRemoteDescription(msg.offer)
+            pc.createAnswer().then((answer)=>{
+                pc.setLocalDescription(answer);
+                socket.send(JSON.stringify({
+                    from:randUserId,
+                    to:msg.from,
+                    answer:answer
+                }));
+                console.log("发送answer:",randUserId,"发送给:",msg.from)
+            })
+        }
+        if (msg.answer){
+            console.log("收到answer:",msg.from,"发送给:",msg.to)
+            pc.setRemoteDescription(msg.answer)
+        }
+
+    }
+
+
+    pc.ontrack=(event)=>{
+        remoteStream=event.streams[0];
+        document.getElementById("remoteVideo").srcObject=remoteStream;
+    }
+
+
+</script>
+</body>
+</html>

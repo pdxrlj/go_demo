@@ -9,6 +9,14 @@ import (
 )
 
 func main() {
+	var b = 2
+	if b != 1 && b != 2 {
+		fmt.Println("aaa")
+		return
+	}
+	fmt.Println("bbb")
+	return
+
 	e := echo.New()
 	e.GET("/get", func(context echo.Context) error {
 		fmt.Printf("get query:%+v\n", context.QueryParams())

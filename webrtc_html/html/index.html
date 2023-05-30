@@ -46,14 +46,15 @@
 
     const pc= new RTCPeerConnection();
 
-    navigator.getUserMedia({video: true, audio: true}, (stream) => {
+    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+
         localStream = stream;
         document.getElementById("localVideo").srcObject=localStream;
 
         localStream.getTracks().forEach((track) => {
             pc.addTrack(track, localStream);
         });
-    }, (error) => {
+    }).catch(error => {
         console.log(error);
     });
 
@@ -62,11 +63,16 @@
 
     pc.signalingstatechange = function (evt) {
         console.log('signalingstatechange', pc.signalingState)
-        if (pc.signalingState === 'stable') {
-            for (const candidate of pendingCandidates) {
-                pc.addIceCandidate(candidate)
-            }
-        }
+
+        // if (pc.signalingState === 'stable') {
+        //     for (const candidate of pendingCandidates) {
+        //         pc.addIceCandidate(candidate)
+        //     }
+        // }
+        // for (const candidate of pendingCandidates) {
+        //     pc.addIceCandidate(candidate)
+        // }
+
     }
 
     socket.onmessage=function (msg) {
@@ -75,6 +81,7 @@
         if (msg.to==="all"){
             let li=document.createElement("li");
             li.innerText=msg.from;
+            li.id=msg.from;
             li.style.cursor="pointer";
             li.onclick=function () {
                 remoteUserId=msg.from;
@@ -106,7 +113,8 @@
         }
 
         if (msg.candidate){
-            pendingCandidates.push(msg.candidate)
+            pc.addIceCandidate(msg.candidate)
+            // pendingCandidates.push(msg.candidate)
         }
 
 
@@ -126,6 +134,12 @@
         if (msg.answer){
             console.log("收到answer:",msg.from,"发送给:",msg.to)
             pc.setRemoteDescription(msg.answer)
+        }
+
+        if (msg.offline){
+            // 收到用户离线信息，删除user列表中的用户
+            userList.removeChild(document.getElementById(msg.offline));
+            console.log("用户离线:",msg.offline)
         }
 
     }

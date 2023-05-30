@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -17,6 +16,7 @@ type Message struct {
 	Candidate any `json:"candidate"`
 	Offer     any `json:"offer"`
 	Answer    any `json:"answer"`
+	OffLine   any `json:"offline"`
 }
 
 func main() {
@@ -42,14 +42,26 @@ func main() {
 			err := websocket.JSON.Receive(ws, &message)
 			if err != nil {
 				rooms.Delete(user)
+				rooms.Range(func(key, value any) bool {
+					if conn, ok := value.(*websocket.Conn); ok {
+						err := websocket.JSON.Send(conn, &Message{
+							From:    "system",
+							To:      key,
+							OffLine: user,
+						})
+						if err != nil {
+							log.Println("write json:", err)
+							return false
+						}
+					}
+					return true
+				})
 				break
 			}
 
-			fmt.Printf("message from:%v to:%v message:%+v\n", message.From, message.To, message)
-
 			if message.To == "all" {
 				rooms.Range(func(key, value any) bool {
-					fmt.Printf("brocast to all key=%v\n", key)
+
 					if conn, ok := value.(*websocket.Conn); ok {
 						err := websocket.JSON.Send(conn, message)
 						if err != nil {

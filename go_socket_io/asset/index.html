@@ -35,17 +35,17 @@
 <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
-    var s = io('http://127.0.0.1:8000/',{
+    var server = io('http://127.0.0.1:8000/',{
         path:"/demo/",
         transports:["websocket"]
     });
 
 
-    s.on("connect", function(){
+    server.on("connect", function(){
         console.log("connected");
     });
 
-    s.on('reply', function(msg){
+    server.on('reply', function(msg){
         $('#messages').append($('<li>').text(msg));
     });
 
@@ -62,7 +62,7 @@
     })
 
 
-    s.emit('notice', $('#content').val());
+    server.emit('notice', $('#content').val());
 
     $('#content').val('');
 

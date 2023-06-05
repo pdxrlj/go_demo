@@ -104,3 +104,25 @@ func (server *Server) RemoveClient(room string, uuid string) *Server {
 	}
 	return server
 }
+
+func (server *Server) GetRoomUsers(roomName string) []byte {
+	if roomName == "" {
+		roomName = defaultRoom
+	}
+
+	users := make([]string, 0)
+	if clients, ok := server.clients[roomName]; ok {
+		clients.Range(func(key, value interface{}) bool {
+			if c, ok := value.(*client.Client); ok {
+				users = append(users, c.UUID())
+			}
+			return true
+		})
+	}
+	marshal, err := sonic.Marshal(users)
+	if err != nil {
+		return nil
+	}
+
+	return marshal
+}

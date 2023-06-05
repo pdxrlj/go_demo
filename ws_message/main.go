@@ -30,6 +30,12 @@ func main() {
 		))
 	}))
 
+	mux.HandleFunc("/ws/users/lists", func(writer http.ResponseWriter, request *http.Request) {
+		rooms := request.URL.Query().Get("rooms")
+		users := chatWs.GetRoomUsers(rooms)
+		_, _ = writer.Write(users)
+	})
+
 	log.Fatal(http.ListenAndServe(":8181", mux))
 
 }

@@ -147,7 +147,7 @@ func (c *Client) Heartbeat() error {
 	if err = c.SendMessage([]byte("heartbeat")); err != nil {
 		fmt.Printf("send heartbeat client:%v retry:%d interval:%+v \n", c.uuid, c.MaxHeartbeatTimes(), c.GetHeartbeatInterval())
 		for i := 0; i < c.MaxHeartbeatTimes(); i++ {
-			if err = c.SendMessage([]byte("heartbeat")); err != nil {
+			if err = c.SendMessage("heartbeat"); err != nil {
 				fmt.Printf("send heartbeat error: %+v\n", err)
 				continue
 			}

@@ -42,10 +42,19 @@
     }
 
 
-    const pc= new RTCPeerConnection();
-
-    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-
+    const pc= new RTCPeerConnection({
+        iceServers: [
+            {
+                urls: 'stun:stun.l.google.com:19302'
+            },
+            {
+                urls: 'turn:192.168.1.22:5800',
+                username: 'foo',
+                credential: 'bar'
+            }
+        ]
+    });
+    navigator.mediaDevices.getDisplayMedia().then(stream => {
         localStream = stream;
         document.getElementById("localVideo").srcObject=localStream;
 
@@ -56,21 +65,22 @@
         console.log(error);
     });
 
+    // navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+    //     localStream = stream;
+    //     document.getElementById("localVideo").srcObject=localStream;
+    //
+    //     localStream.getTracks().forEach((track) => {
+    //         pc.addTrack(track, localStream);
+    //     });
+    // }).catch(error => {
+    //     console.log(error);
+    // });
+
 
     let userList=document.getElementById("user_list");
 
     pc.signalingstatechange = function (evt) {
         console.log('signalingstatechange', pc.signalingState)
-
-        // if (pc.signalingState === 'stable') {
-        //     for (const candidate of pendingCandidates) {
-        //         pc.addIceCandidate(candidate)
-        //     }
-        // }
-        // for (const candidate of pendingCandidates) {
-        //     pc.addIceCandidate(candidate)
-        // }
-
     }
 
     socket.onmessage=function (msg) {
@@ -112,9 +122,7 @@
 
         if (msg.candidate){
             pc.addIceCandidate(msg.candidate)
-            // pendingCandidates.push(msg.candidate)
         }
-
 
         if (msg.offer){
             console.log("收到offer:",msg.from,"发送给:",msg.to)
@@ -142,12 +150,10 @@
 
     }
 
-
     pc.ontrack=(event)=>{
         remoteStream=event.streams[0];
         document.getElementById("remoteVideo").srcObject=remoteStream;
     }
-
 
 </script>
 </body>

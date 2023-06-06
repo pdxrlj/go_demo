@@ -1,33 +1,43 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
-	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"github.com/pion/turn/v2"
 )
 
-var turnServer *turn.Server
+// webrt 中继服务器
+func main() {
+	publicIP := "192.168.1.22"
+	port := 5800 // 13902
+	user := "foo"
+	pwd := "bar"
+	realm := "localhost" // 领域，把这个当做数据库名好了
 
-func startTurn(publicIP string, listenPort int, realm string, username string, password string) {
-	udpListener, err := net.ListenPacket("udp4", "0.0.0.0:"+strconv.Itoa(listenPort))
+	// 创建一个 UDP 侦听器然后传递给 turn 服务器，turn 服务器本身不分配任何 upd socket，
+	// 需要我们自己创建套接字然后通过 turn 传递给对方。
+	// 自己创建的 socket 就允许了我们添加日志记录、存储或修改入站/出站流量
+	udpListener, err := net.ListenPacket("udp4", publicIP+":"+strconv.Itoa(port))
 	if err != nil {
-		log.Panicf("Failed to create TURN server listener: %s", err)
+		log.Printf("Failed to create TURN server listener: %v\n", err)
 	}
 
+	// 写死个账号密码用于测试，GenerateAuthKey() 用于将密码进行散列，然后再保存到数据
 	usersMap := map[string][]byte{}
-	usersMap[username] = turn.GenerateAuthKey(username, realm, password)
+	usersMap[user] = turn.GenerateAuthKey(user, realm, pwd)
 
-	turnServer, err = turn.NewServer(turn.ServerConfig{
+	turnServer, err := turn.NewServer(turn.ServerConfig{
 		Realm: realm,
 		// Set AuthHandler callback
-		// This is called everytime a user tries to authenticate with the TURN server
-		// Return the key for that user, or false when no user is found
+		// 每当用户试图通过TURN服务器进行身份验证时，都会调用此函数
+		// 返回该用户的密钥，如果未找到用户，则返回 false
 		AuthHandler: func(username string, realm string, srcAddr net.Addr) ([]byte, bool) {
-			fmt.Printf("Received connect auth, username=%s, realm=%s\n", username, realm)
+			log.Printf("Received connect auth, username=%s, realm=%s\n", username, realm)
 			// framework will check auth key
 			if key, ok := usersMap[username]; ok {
 				return key, true
@@ -47,22 +57,13 @@ func startTurn(publicIP string, listenPort int, realm string, username string, p
 		},
 	})
 
-	fmt.Printf("turn server public ip=%s, listen port=%d, realm=%s, username=%s, password=%s\n",
-		publicIP, listenPort, realm, username, password)
+	// Block until user sends SIGINT or SIGTERM
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	<-sigs
 
-	if err != nil {
-		log.Panic(err)
+	if err = turnServer.Close(); err != nil {
+		log.Printf("%v\n", err)
 	}
-}
 
-func main() {
-	var listenAddress string
-	listenAddress = "0.0.0.0:8084"
-	http.Handle("/", http.FileServer(http.Dir(".")))
-
-	fmt.Printf("HTTP server listen on http://%s\n", listenAddress)
-
-	startTurn("127.0.0.1", 13902, "localhost", "foo", "bar")
-
-	panic(http.ListenAndServe(listenAddress, nil))
 }

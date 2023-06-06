@@ -2,7 +2,11 @@ module robotgo
 
 go 1.20
 
-require github.com/go-vgo/robotgo v0.100.10
+require (
+	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
+	github.com/go-vgo/robotgo v0.100.10
+	github.com/vcaesar/keycode v0.10.0
+)
 
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
@@ -17,8 +21,7 @@ require (
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/vcaesar/gops v0.21.3 // indirect
 	github.com/vcaesar/imgo v0.30.0 // indirect
-	github.com/vcaesar/keycode v0.10.0 // indirect
 	github.com/vcaesar/tt v0.20.0 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410 // indirect
-	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 )

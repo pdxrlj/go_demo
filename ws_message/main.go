@@ -13,10 +13,12 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
+
 	chatWs := server.NewServer()
 	defer chatWs.Stop()
 	// websocket
 	mux.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
+		fmt.Printf("client connect: %s\n", ws.Request().RemoteAddr)
 		// websocket 连接
 		uuid := ws.Request().URL.Query().Get("uuid")
 		if uuid == "" {

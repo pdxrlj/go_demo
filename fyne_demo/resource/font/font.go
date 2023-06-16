@@ -1,5 +1,8 @@
-package main
+package font
 
-func main() {
+import (
+	_ "embed"
+)
 
-}
+//go:embed font.ttf
+var Font []byte

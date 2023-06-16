@@ -1,5 +1,8 @@
-package main
+package image
 
-func main() {
+import (
+	_ "embed"
+)
 
-}
+//go:embed img.png
+var Icon []byte

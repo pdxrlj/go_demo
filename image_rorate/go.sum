@@ -1,0 +1,4 @@
+github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 h1:lTG4HQym5oPKjL7nGs+csTgiDna685ZXjxijkne828g=
+github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966/go.mod h1:Mid70uvE93zn9wgF92A/r5ixgnvX8Lh68fxp9KQBaI0=
+github.com/pdxrlj/graphics v0.0.0-20230616013404-606d5a77ae59 h1:zJruIVInQ77rf43aYhx7q+/9a10Kd1fC6N1iDE/p91I=
+github.com/pdxrlj/graphics v0.0.0-20230616013404-606d5a77ae59/go.mod h1:DixTxmTybKlxWGk710SJkTHyWmAtPPmpOT8B6DkVRzA=

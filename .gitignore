@@ -155,3 +155,6 @@ dist
 # Go workspace file
 go.work
 
+.DS_Store
+*.tiff
+*.sum

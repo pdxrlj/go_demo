@@ -13,6 +13,12 @@ import (
 )
 
 func main() {
+
+	fmt.Println(int('1'))
+	fmt.Println(int('0'))
+	fmt.Println(int('1'-'0') + 4)
+	return
+
 	err := NewBuildGTiff(
 		WithBuildGTiffBounds(6761, 3329, 6774, 3340),
 		WithBuildGTiffDestFilename("build.tiff"),
@@ -121,7 +127,7 @@ func (b *BuildGTiff) Build() error {
 		y := filepath.Base(path)[:strings.Index(filepath.Base(path), ".")]
 		x := filepath.Base(filepath.Dir(path))
 		//z := filepath.Base(filepath.Dir(filepath.Dir(path)))
-		fmt.Printf("x: %s, y: %s\n", x, y)
+		//fmt.Printf("x: %s, y: %s\n", x, y)
 		xInt, err := strconv.Atoi(x)
 		if err != nil {
 			return err

@@ -4,17 +4,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	var b = 2
-	if b != 1 && b != 2 {
-		fmt.Println("aaa")
-		return
-	}
-	fmt.Println("bbb")
+	u := "http://117.78.4.140:3389/tile-server/v1?layer=China_08m_DOM_3857_WMTS^&tilematrix={z}^&Tilecol={x}^&TileRow={y}"
+	escapeUrl, err := url.QueryUnescape(u)
+	fmt.Printf("escapeUrl:%+v err:%v\n", escapeUrl, err)
 	return
 
 	e := echo.New()

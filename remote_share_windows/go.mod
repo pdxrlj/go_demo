@@ -7,7 +7,9 @@ require (
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gorilla/websocket v1.5.0
 	github.com/pkg/errors v0.9.1
+	github.com/spf13/cast v1.5.1
 	github.com/spf13/cobra v1.7.0
+	golang.org/x/sync v0.3.0
 )
 
 require (

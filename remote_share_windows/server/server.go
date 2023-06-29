@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 
 	"remote_share_windows/config"
@@ -8,17 +10,20 @@ import (
 	"remote_share_windows/server/handler"
 )
 
-func NewRouter() *mux.Http {
+type Server struct {
+	httpRouter *mux.Http
+	c          *config.AppConfig
+}
+
+func NewServer(appConfig *config.AppConfig) *Server {
 	r := mux.NewHttp(mux.WithAppConfig(&config.AppConfig{}))
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域
-			w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
-			w.Header().Set("content-type", "application/json")             //返回数据格式是json
-			next.ServeHTTP(w, r)
-		})
-	})
+
 	r.Get("/ws", handler.ApiWsGuacamole)
 
-	return r
+	return &Server{httpRouter: r, c: appConfig}
+}
+
+func (s *Server) Run() {
+	fmt.Printf("server run on %s\n", s.c.Addr)
+	log.Fatal(http.ListenAndServe(s.c.Addr, s.httpRouter))
 }

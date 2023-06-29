@@ -1,11 +1,12 @@
 package lib
 
 import (
+	"io"
 	"testing"
 )
 
 func TestNewGuacamoleTunnel(t *testing.T) {
-	if err := NewGuacamoleTunnel(&GuacamoleTunnel{
+	if tunnel, err := NewGuacamoleTunnel(&GuacamoleTunnel{
 		GuacamoleAddr: "192.168.1.223:4822",
 		Protocol:      "vnc",
 		Host:          "192.168.1.223",
@@ -18,5 +19,12 @@ func TestNewGuacamoleTunnel(t *testing.T) {
 		Dpi:           128,
 	}); err != nil {
 		t.Errorf("NewGuacamoleTunnel() error = %v", err)
+	} else {
+		reader := tunnel.AcquireReader()
+		all, err := io.ReadAll(reader.Conn)
+		if err != nil {
+			panic(err)
+		}
+		t.Log(all)
 	}
 }

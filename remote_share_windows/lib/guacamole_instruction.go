@@ -1,7 +1,11 @@
 package lib
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
+	"strconv"
 )
 
 type Instruction struct {
@@ -37,11 +41,38 @@ func (i *Instruction) Bytes() []byte {
 	return []byte(i.String())
 }
 
-func Parse(s *Stream) (*Instruction, error) {
-	read, err := s.Read()
-	if err != nil {
-		return nil, err
+func Parse(s []byte) (*Instruction, error) {
+	ioReader := bytes.NewReader(s)
+	reader := bufio.NewReader(ioReader)
+	instruction := &Instruction{}
+	for {
+		index, err := reader.ReadBytes('.')
+		if err != nil {
+			return nil, err
+		}
+
+		arg, err := reader.ReadSlice(',')
+		if err != nil {
+			if err == io.EOF {
+				indexInt, err := strconv.Atoi(string(index[:len(index)-1]))
+				if err != nil {
+					return nil, err
+				}
+				end := bytes.TrimSuffix(s[len(s)-indexInt-1:], []byte{';'})
+
+				instruction.Args = append(instruction.Args, string(end))
+				return instruction, nil
+			} else {
+				return nil, err
+			}
+		}
+		arg = bytes.TrimSuffix(arg, []byte{','})
+
+		if instruction.Opcode == "" {
+			instruction.Opcode = string(arg)
+			continue
+		} else {
+			instruction.Args = append(instruction.Args, string(arg))
+		}
 	}
-	fmt.Printf("read: %s\n", read)
-	return nil, nil
 }

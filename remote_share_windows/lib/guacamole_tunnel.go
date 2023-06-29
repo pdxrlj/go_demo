@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/pkg/errors"
@@ -12,7 +11,7 @@ type GuacamoleTunnel struct {
 	W, H, Dpi                                                 int
 }
 
-func NewGuacamoleTunnel(tunnelConfig *GuacamoleTunnel) error {
+func NewGuacamoleTunnel(tunnelConfig *GuacamoleTunnel) (*SimpleTunnel, error) {
 	config := NewGuacamoleConfig(
 		WithConnectionID(tunnelConfig.Uuid),
 		WithProtocol(tunnelConfig.Protocol),
@@ -30,11 +29,15 @@ func NewGuacamoleTunnel(tunnelConfig *GuacamoleTunnel) error {
 			"password":    tunnelConfig.Password,
 		}),
 	)
+
 	conn, err := net.Dial("tcp", tunnelConfig.GuacamoleAddr)
 	if err != nil {
-		return errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
-	stream := NewStream(conn, SocketTimeout).Handshake(config)
-	fmt.Println("stream", stream)
-	return nil
+	stream, err := NewStream(conn, SocketTimeout).Handshake(config)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	tunnel := NewSimpleTunnel(stream)
+	return tunnel, nil
 }

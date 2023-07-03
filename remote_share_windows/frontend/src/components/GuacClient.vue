@@ -92,7 +92,7 @@ export default {
       errorMessage: '',
       arguments: {},
       query:{
-        guacad_addr:'192.168.1.223:4822',
+        guacamole_addr:'192.168.1.223:4822',
         asset_protocol:'rdp',
         asset_host:'192.168.1.223',
         asset_port:'3389',

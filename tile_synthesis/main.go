@@ -13,19 +13,13 @@ import (
 )
 
 func main() {
-
-	fmt.Println(int('1'))
-	fmt.Println(int('0'))
-	fmt.Println(int('1'-'0') + 4)
-	return
-
 	err := NewBuildGTiff(
-		WithBuildGTiffBounds(6761, 3329, 6774, 3340),
-		WithBuildGTiffDestFilename("build.tiff"),
-		WithBuildGTiffLevel(13),
-		WithBuildGTiffTileSize(256),
-		WithBuildGTiffBand(3),
-		WithBuildGTiffSourceDir("/Users/ruanlianjun/Desktop/tile_download_test/13"),
+		WithBuildGTiffBounds(6761, 3329, 6774, 3340), // 瓦片的范围，最大最小行列号 minx,miny, maxx, maxy
+		WithBuildGTiffDestFilename("build.tiff"),     // 输出文件名
+		WithBuildGTiffLevel(13),                      //	瓦片级别
+		WithBuildGTiffTileSize(256),                  // 瓦片大小
+		WithBuildGTiffBand(3),                        // 波段
+		WithBuildGTiffSourceDir("/Users/ruanlianjun/Desktop/tile_download_test/13"), // 瓦片所在目录
 	).Init().Build()
 	if err != nil {
 		fmt.Printf("err: %+v\n", err)
@@ -106,6 +100,7 @@ func (b *BuildGTiff) Init() *BuildGTiff {
 	resultWidth := int(math.Ceil(float64(b.MaxX-b.MinX+1) * float64(b.TileSize)))
 	resultHeight := int(math.Ceil(float64(b.MaxY-b.MinY+1) * float64(b.TileSize)))
 	fmt.Printf("resultWidth: %d, resultHeight: %d\n", resultWidth, resultHeight)
+
 	_ = os.Remove(b.DestFilename)
 	create := driver.Create(b.DestFilename, resultWidth, resultHeight, b.Band, gdal.Byte, nil)
 	// 设置crate的geometry
@@ -113,7 +108,9 @@ func (b *BuildGTiff) Init() *BuildGTiff {
 	if err != nil {
 		panic("SetGeoTransform: " + err.Error())
 	}
+
 	b.outDs = &create
+
 	return b
 }
 
@@ -232,6 +229,9 @@ func (t *TileCoordinateBound) TileBounds() *TileCoordinateBound {
 	t.rMinY = miny
 	t.rMaxX = maxx
 	t.rMaxY = maxy
+	// Level: 15, Col: 27380, Row: 13434
+	//[13448025.008370 3606604.742612],[13449248.000823 3607827.735064]
+	//fmt.Printf("minx: %f, miny: %f, maxx: %f, maxy: %f\n", minx, miny, maxx, maxy)
 	return t
 }
 

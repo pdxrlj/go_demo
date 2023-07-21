@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	dataset := NewDataset("/Users/ruanlianjun/Desktop/demo.tif")
+	dataset := NewDataset("/Users/ruanlianjun/Desktop/I50H047168.tif")
 
 	epsg, err := godal.NewSpatialRefFromEPSG(3857)
 	if err != nil {
@@ -38,7 +38,12 @@ func main() {
 
 	bounds := dataset.TransformBounds(epsg)
 	vrt := dataset.mercatorVrt()
-	for i := 7; i < 11; i++ {
+	//fmt.Printf("bounds: %v\n", bounds)
+	//tileRange := NewTileRange().TileRange(10, bounds)
+	//fmt.Printf("tileRange: %v\n", tileRange)
+	//return
+
+	for i := 16; i < 17; i++ {
 		tileRange := NewTileRange().TileRange(i, bounds)
 		tileRange.iter(func(tileId *TileId) {
 			join := filepath.Join(fmt.Sprintf("tmp/%d/%d/%d.png", tileId.z, tileId.x, tileId.y))
@@ -179,6 +184,10 @@ func NewAffine() *Affine {
 	return &Affine{}
 }
 
+// xmin: affine.c,
+// ymin: affine.f + affine.e*float64(h),
+// xmax: affine.c + affine.a*float64(w),
+// ymax: affine.f,
 func (a *Affine) fromGdal(transform [6]float64) *Affine {
 	a.a = transform[1]
 	a.b = transform[2]
@@ -335,8 +344,10 @@ func (d *Dataset) ReadTile(tileId *TileId, tileSize int) [][]byte {
 	widthSize := int(math.Round(float64(tileSize) - left - right))
 	heightSize := int(math.Round(float64(tileSize) - top - bottom))
 
+	fmt.Printf("vrtheight: %f, vrtwidth: %f\n", vrtHeightF, vrtWidthF)
 	xOffset := math.Round(math.Min(vrtWidthF, math.Max(0, windows.xOffset)))
 	yOffset := math.Round(math.Min(vrtHeightF, math.Max(0, windows.yOffset)))
+
 	xStop := math.Min(vrtWidthF, math.Max(0, windows.xOffset+windows.width))
 	yStop := math.Min(vrtHeightF, math.Max(0, windows.yOffset+windows.height))
 
@@ -345,29 +356,6 @@ func (d *Dataset) ReadTile(tileId *TileId, tileSize int) [][]byte {
 	if readWidth <= 0 || readHeight <= 0 {
 		return nil
 	}
-
-	//span := widthsize * heightsize * d.vrtDataset.RasterCount()
-	//tmp := make([]byte, span, span)
-	//err := d.vrtDataset.IO(gdal.Read, xOffset, yOffset, readWidth, readHeight, tmp, widthsize, heightsize, d.vrtDataset.RasterCount(), []int{1, 2, 3}, 0, 0, 0)
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	//tmp := make([]byte, 256*256, 256*256)
-
-	//for i := range tmp {
-	//	tmp[i] = 255
-	//}
-
-	//err := d.vrtDataset.RasterBand(1).IO(gdal.Read, int(xOffset), int(yOffset), readWidth, readHeight, tmp, widthSize, heightSize, 0, 0)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//if left > 0 || top > 0 || widthSize < tileSize || heightSize < tileSize {
-	//	buff := shift(tileId, tmp, [2]int{widthSize, heightSize}, [2]int{tileSize, tileSize}, [2]int{int(left), int(top)}, 255)
-	//	tmp = buff
-	//}
 
 	bandCount := d.vrtDataset.RasterCount()
 	bands := make([][]byte, bandCount)
@@ -379,6 +367,11 @@ func (d *Dataset) ReadTile(tileId *TileId, tileSize int) [][]byte {
 		for i := range data {
 			data[i] = 255
 		}
+
+		fmt.Printf("xOffset: %f, yOffset: %f\n", xOffset, yOffset)
+		fmt.Printf("readWidth: %d, readHeight: %d\n", readWidth, readHeight)
+		fmt.Printf("widthSize: %d, heightSize: %d\n", widthSize, heightSize)
+
 		err := band.IO(gdal.Read, int(xOffset), int(yOffset), readWidth, readHeight, data, widthSize, heightSize, 0, 0)
 		if err != nil {
 			panic(err)

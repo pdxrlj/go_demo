@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
     <data-source source="LOCAL" name="test" uuid="28486ec5-6180-487d-918a-a995f36b0b44">
-      <driver-ref>sqlite.xerial</driver-ref>
+      <driver-ref>c5297420-bd05-450f-9162-71f9ec351a99</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
       <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/gorm/test.db</jdbc-url>

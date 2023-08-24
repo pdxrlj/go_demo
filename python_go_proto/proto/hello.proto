@@ -1,0 +1,22 @@
+syntax="proto3";
+
+package greeting;
+
+option go_package ="./greeting";
+
+message Greeting {
+    string message = 1;
+    string name = 2;
+}
+
+message GreetingRequest {
+    string name = 1;
+}
+
+message GreetingResponse {
+    string message = 1;
+}
+
+service GreetingService {
+    rpc Greet(GreetingRequest) returns (GreetingResponse);
+}

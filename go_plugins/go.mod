@@ -3,6 +3,7 @@ module go_plugin_demo
 go 1.21.0
 
 require (
+	github.com/hashicorp/go-hclog v0.14.1
 	github.com/hashicorp/go-plugin v1.4.10
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
@@ -11,7 +12,6 @@ require (
 require (
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect

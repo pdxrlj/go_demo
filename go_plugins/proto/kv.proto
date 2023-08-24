@@ -2,6 +2,7 @@ syntax = "proto3";
 package kv_store;
 option go_package = "/kv_store";
 
+
 message GetRequest {
   string key = 1;
 }

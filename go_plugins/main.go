@@ -43,11 +43,6 @@ func main() {
 
 	kv := raw.(shared.KvStoreInterface)
 
-	//err = kv.Put("demo", []byte("hello world"))
-	//if err != nil {
-	//	panic(err)
-	//}
-
 	get, err := kv.Get("demo")
 	if err != nil {
 		return

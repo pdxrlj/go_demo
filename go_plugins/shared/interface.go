@@ -3,10 +3,10 @@ package shared
 import (
 	"context"
 
+	"go_plugin_demo/proto/kv_store"
+
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
-
-	"go_plugin_demo/proto/kv_store"
 )
 
 var Handshake = plugin.HandshakeConfig{
@@ -23,6 +23,7 @@ type KvStoreInterface interface {
 
 var _ plugin.GRPCPlugin = (*KvStorePlugin)(nil)
 
+// 实现 plugin.PLugin 接口 GRPCServer和GRPCClient
 type KvStorePlugin struct {
 	plugin.Plugin
 	Impl KvStoreInterface
